@@ -1,0 +1,40 @@
+name: Scrape and save forger.tall-tales.info
+
+on:
+  workflow_dispatch:
+  schedule:
+  - cron:  '37 1 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download forger.tall-tales.info JSON
+        run: .github/scripts/download-forger-json.sh
+
+      - name: Convert forger JSON to CSV
+        # No fancy Python features used, so system Python is fine
+        run: python3 .github/scripts/convert-forger-json-to-csv.py
+      
+      - name: Configure Git
+        run: |
+          # Act as the GitHub Actions bot user
+          # See: https://github.com/actions/checkout/blob/main/README.md#push-a-commit-using-the-built-in-token
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and push
+        run: |
+          git add -A
+          timestamp=$(date +"%Y-%m-%d")
+          git commit -m "ci: refresh data ${timestamp}" \
+            || { echo "::notice::Nothing to commit"; exit 0; }
+          git pull --rebase
+          git push
+
+          echo "::notice::Repo data refreshed"
