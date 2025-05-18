@@ -13,9 +13,7 @@ Run the script to produce the updated CSV.
 import json
 import csv
 import sys
-import os
 from pathlib import Path
-from datetime import datetime
 
 ROOT = Path(__file__).parent.parent.parent
 
